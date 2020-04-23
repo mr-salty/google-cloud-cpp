@@ -36,10 +36,8 @@ class ThreadIntegrationTest
                             ObjectNameList const& group,
                             std::string const& contents) {
     // Create our own client so no state is shared with the other threads.
-    StatusOr<Client> client = MakeIntegrationTestClient();
-    ASSERT_STATUS_OK(client);
     for (auto const& object_name : group) {
-      StatusOr<ObjectMetadata> meta = client->InsertObject(
+      StatusOr<ObjectMetadata> meta = client().InsertObject(
           bucket_name, object_name, contents, IfGenerationMatch(0));
       ASSERT_STATUS_OK(meta);
     }
@@ -48,25 +46,19 @@ class ThreadIntegrationTest
   static void DeleteObjects(std::string const& bucket_name,
                             ObjectNameList const& group) {
     // Create our own client so no state is shared with the other threads.
-    StatusOr<Client> client = MakeIntegrationTestClient();
-    ASSERT_STATUS_OK(client);
     for (auto const& object_name : group) {
-      (void)client->DeleteObject(bucket_name, object_name);
+      (void)client().DeleteObject(bucket_name, object_name);
     }
   }
 
  protected:
   void SetUp() override {
-    project_id_ =
-        google::cloud::internal::GetEnv("GOOGLE_CLOUD_PROJECT").value_or("");
-    ASSERT_FALSE(project_id_.empty());
+    google::cloud::storage::testing::StorageIntegrationTest::SetUp();
     region_id_ = google::cloud::internal::GetEnv(
                      "GOOGLE_CLOUD_CPP_STORAGE_TEST_REGION_ID")
                      .value_or("");
     ASSERT_FALSE(region_id_.empty());
   }
-
-  std::string project_id_;
   std::string region_id_;
 };
 
@@ -104,11 +96,9 @@ std::vector<ObjectNameList> DivideIntoEqualSizedGroups(
 
 TEST_F(ThreadIntegrationTest, Unshared) {
   std::string bucket_name = MakeRandomBucketName();
-  StatusOr<Client> client = MakeIntegrationTestClient();
-  ASSERT_STATUS_OK(client);
 
-  StatusOr<BucketMetadata> meta = client->CreateBucketForProject(
-      bucket_name, project_id_,
+  StatusOr<BucketMetadata> meta = client().CreateBucketForProject(
+      bucket_name, project_id(),
       BucketMetadata()
           .set_storage_class(storage_class::Standard())
           .set_location(region_id_)
@@ -152,7 +142,7 @@ TEST_F(ThreadIntegrationTest, Unshared) {
     t.get();
   }
 
-  auto delete_status = client->DeleteBucket(bucket_name);
+  auto delete_status = client().DeleteBucket(bucket_name);
   ASSERT_STATUS_OK(delete_status);
   // This is basically a smoke test, if the test does not crash it was
   // successful.
@@ -187,7 +177,7 @@ TEST_F(ThreadIntegrationTest, ReuseConnections) {
 
   auto id = LogSink::Instance().AddBackend(log_backend);
   StatusOr<BucketMetadata> meta = client.CreateBucketForProject(
-      bucket_name, project_id_,
+      bucket_name, project_id(),
       BucketMetadata()
           .set_storage_class(storage_class::Standard())
           .set_location(region_id_)
