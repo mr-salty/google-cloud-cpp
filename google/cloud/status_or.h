@@ -18,6 +18,7 @@
 #include "google/cloud/internal/throw_delegate.h"
 #include "google/cloud/status.h"
 #include "google/cloud/version.h"
+#include "absl/base/macros.h"
 #include <type_traits>
 #include <utility>
 
@@ -250,13 +251,25 @@ class StatusOr final {
    * @return All these return a (properly ref and const-qualified) reference to
    *     the underlying value.
    */
-  T& operator*() & { return value_; }
+  T& operator*() & {
+    CheckHasValue();
+    return value_;
+  }
 
-  T const& operator*() const& { return value_; }
+  T const& operator*() const& {
+    CheckHasValue();
+    return value_;
+  }
 
-  T&& operator*() && { return std::move(value_); }
+  T&& operator*() && {
+    CheckHasValue();
+    return std::move(value_);
+  }
 
-  T const&& operator*() const&& { return std::move(value_); }
+  T const&& operator*() const&& {
+    CheckHasValue();
+    return std::move(value_);
+  }
   //@}
 
   //@{
@@ -269,9 +282,15 @@ class StatusOr final {
    * @return All these return a (properly ref and const-qualified) pointer to
    *     the underlying value.
    */
-  T* operator->() & { return &value_; }
+  T* operator->() & {
+    CheckHasValue();
+    return &value_;
+  }
 
-  T const* operator->() const& { return &value_; }
+  T const* operator->() const& {
+    CheckHasValue();
+    return &value_;
+  }
   //@}
 
   //@{
