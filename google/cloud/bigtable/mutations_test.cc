@@ -16,6 +16,7 @@
 #include "google/cloud/internal/big_endian.h"
 #include "google/cloud/testing_util/assert_ok.h"
 #include "google/cloud/testing_util/chrono_literals.h"
+#include "google/cloud/testing_util/status_matchers.h"
 #include <google/rpc/error_details.pb.h>
 #include <gmock/gmock.h>
 
@@ -173,9 +174,9 @@ TEST(MutationsTest, FailedMutation) {
   status.add_details()->PackFrom(debug_info);
 
   FailedMutation fm(std::move(status), 27);
-  EXPECT_EQ(google::cloud::StatusCode::kFailedPrecondition, fm.status().code());
-  EXPECT_EQ("something failed", fm.status().message());
-  EXPECT_FALSE(fm.status().message().empty());
+  EXPECT_THAT(fm.status(), google::cloud::testing_util::StatusIs(
+                               google::cloud::StatusCode::kFailedPrecondition,
+                               "something failed"));
   EXPECT_EQ(27, fm.original_index());
 }
 
